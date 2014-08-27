@@ -29,6 +29,23 @@ import android.widget.Toast;
  */
 public class NavigationDrawerFragment extends Fragment {
 
+    // titles for navdrawer items (indices must correspond to the above)
+    static final int[] NAVDRAWER_TITLE_RES_ID = new int[]{
+            R.string.navigation_homepage,
+            R.string.navigation_evaluating,
+            R.string.navigation_pc,
+            R.string.navigation_handset,
+            R.string.navigation_photography,
+            R.string.navigation_photo,
+            R.string.navigation_automobile,
+            R.string.navigation_bicycle,
+            R.string.navigation_model,
+            R.string.navigation_shopping,
+            R.string.navigation_media,
+            R.string.navigation_food,
+            R.string.navigation_culture
+    };
+
     /**
      * Remember the position of the selected item.
      */
@@ -99,15 +116,20 @@ public class NavigationDrawerFragment extends Fragment {
         });
         mDrawerListView.setAdapter(new ArrayAdapter<String>(
                 getActionBar().getThemedContext(),
-                android.R.layout.simple_list_item_activated_1,
-                android.R.id.text1,
-                new String[]{
-                        getString(R.string.title_section1),
-                        getString(R.string.title_section2),
-                        getString(R.string.title_section3),
-                }));
+                R.layout.adapter_navigation_item,
+                R.id.text,
+                getTitles()));
         mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);
         return mDrawerListView;
+    }
+
+    private String[] getTitles() {
+        String[] titles = new String[NAVDRAWER_TITLE_RES_ID.length];
+        int i;
+        for (i = 0; i < NAVDRAWER_TITLE_RES_ID.length; i++) {
+            titles[i] = getString(NAVDRAWER_TITLE_RES_ID[i]);
+        }
+        return titles;
     }
 
     public boolean isDrawerOpen() {

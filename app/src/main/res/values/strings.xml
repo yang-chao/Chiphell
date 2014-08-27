@@ -2,12 +2,24 @@
 <resources>
 
     <string name="app_name">Chiphell</string>
-    <string name="title_section1">Section 1</string>
-    <string name="title_section2">Section 2</string>
-    <string name="title_section3">Section 3</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="action_example">Example action</string>
     <string name="action_settings">Settings</string>
+
+    <!--navigation-->
+    <string name="navigation_homepage">首页</string>
+    <string name="navigation_evaluating">评测</string>
+    <string name="navigation_pc">电脑</string>
+    <string name="navigation_handset">掌设</string>
+    <string name="navigation_photography">摄影</string>
+    <string name="navigation_photo">照片</string>
+    <string name="navigation_automobile">汽车</string>
+    <string name="navigation_bicycle">单车</string>
+    <string name="navigation_model">模型</string>
+    <string name="navigation_shopping">败家</string>
+    <string name="navigation_media">视听</string>
+    <string name="navigation_food">美食</string>
+    <string name="navigation_culture">文化</string>
 
 </resources>
