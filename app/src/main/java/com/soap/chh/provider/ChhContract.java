@@ -7,7 +7,7 @@ import android.text.TextUtils;
 import android.text.format.DateUtils;
 
 /**
- * Created by user on 14-8-28.
+ * Created by yc on 14-8-28.
  */
 public class ChhContract {
 
