@@ -45,4 +45,8 @@ public class ChhDatabase extends SQLiteOpenHelper {
 
 //        db.execSQL("DROP TABLE IF EXISTS " + Tables.NEWS);
     }
+
+    public static void deleteDatabase(Context context) {
+        context.deleteDatabase(DATABASE_NAME);
+    }
 }

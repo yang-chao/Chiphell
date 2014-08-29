@@ -11,6 +11,7 @@ import android.text.format.DateUtils;
  */
 public class ChhContract {
 
+    public static final String QUERY_PARAMETER_DISTINCT = "distinct";
 
     interface NewsColumns {
         String NEWS_ID = "news_id";
