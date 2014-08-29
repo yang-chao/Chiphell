@@ -1,4 +1,4 @@
-package com.soap.chh.io.model;
+package com.soap.chh.io;
 
 import android.content.ContentProviderOperation;
 import android.content.Context;
@@ -7,6 +7,7 @@ import android.net.Uri;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.soap.chh.io.JSONHandler;
+import com.soap.chh.io.model.News;
 import com.soap.chh.provider.ChhContract;
 
 import java.util.ArrayList;
