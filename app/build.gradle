@@ -24,4 +24,5 @@ dependencies {
     compile 'com.android.support:support-v4:20.0.0'
     compile 'com.google.code.gson:gson:2.+'
     compile 'com.mcxiaoke.volley:library:1.0.6'
+    compile 'com.turbomanage.basic-http-client:http-client-android:0.89'
 }

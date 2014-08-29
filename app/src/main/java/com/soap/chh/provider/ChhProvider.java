@@ -1,8 +1,11 @@
 package com.soap.chh.provider;
 
 import android.content.ContentProvider;
+import android.content.ContentProviderOperation;
+import android.content.ContentProviderResult;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.OperationApplicationException;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -15,6 +18,7 @@ import com.soap.chh.provider.ChhDatabase.Tables;
 import com.soap.chh.provider.ChhContract.News;
 import static com.soap.chh.util.LogUtils.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 
@@ -60,6 +64,7 @@ public class ChhProvider extends ContentProvider {
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
         // Implement this to handle requests to delete one or more rows.
+        LOGV(TAG, "delete(uri=" + uri + ")");
         if (uri == ChhContract.BASE_CONTENT_URI) {
             // Handle whole database deletes (e.g. when signing out)
             deleteDatabase();
@@ -67,7 +72,26 @@ public class ChhProvider extends ContentProvider {
             return 1;
         }
 
-        return 0;
+        final SQLiteDatabase db = mOpenHelper.getWritableDatabase();
+        final SelectionBuilder builder = buildSimpleSelection(uri);
+//        final int match = sUriMatcher.match(uri);
+        int retVal = builder.where(selection, selectionArgs).delete(db);
+        notifyChange(uri);
+        return retVal;
+    }
+
+    @Override
+    public int update(Uri uri, ContentValues values, String selection,
+                      String[] selectionArgs) {
+        LOGV(TAG, "update(uri=" + uri + ", values=" + values.toString()
+                + ")");
+        final SQLiteDatabase db = mOpenHelper.getWritableDatabase();
+//        final int match = sUriMatcher.match(uri);
+
+        final SelectionBuilder builder = buildSimpleSelection(uri);
+        int retVal = builder.where(selection, selectionArgs).update(db, values);
+        notifyChange(uri);
+        return retVal;
     }
 
     private void notifyChange(Uri uri) {
@@ -91,8 +115,23 @@ public class ChhProvider extends ContentProvider {
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
-        // TODO: Implement this to handle requests to insert a new row.
-        throw new UnsupportedOperationException("Not yet implemented");
+        LOGV(TAG, "insert(uri=" + uri + ", values=" + values.toString()
+                + ")");
+
+        final SQLiteDatabase db = mOpenHelper.getWritableDatabase();
+        final int match = sUriMatcher.match(uri);
+
+        switch (match) {
+            case NEWS: {
+                db.insertOrThrow(Tables.NEWS, null, values);
+                notifyChange(uri);
+                return News.buildNewsUri(values.getAsString(News.NEWS_ID));
+            }
+            default: {
+                throw new UnsupportedOperationException("Unknown insert uri: " + uri);
+            }
+
+        }
     }
 
     @Override
@@ -114,8 +153,6 @@ public class ChhProvider extends ContentProvider {
                 // Most cases are handled with simple SelectionBuilder
                 final SelectionBuilder builder = buildExpandedSelection(uri, match);
 
-                // TODO: If a special filter was specified, try to apply it
-
                 boolean distinct = !TextUtils.isEmpty(
                         uri.getQueryParameter(ChhContract.QUERY_PARAMETER_DISTINCT));
 
@@ -131,6 +168,29 @@ public class ChhProvider extends ContentProvider {
         }
     }
 
+    /**
+     * Apply the given set of {@link android.content.ContentProviderOperation}, executing inside
+     * a {@link SQLiteDatabase} transaction. All changes will be rolled back if
+     * any single one fails.
+     */
+    @Override
+    public ContentProviderResult[] applyBatch(ArrayList<ContentProviderOperation> operations)
+            throws OperationApplicationException {
+        final SQLiteDatabase db = mOpenHelper.getWritableDatabase();
+        db.beginTransaction();
+        try {
+            final int numOperations = operations.size();
+            final ContentProviderResult[] results = new ContentProviderResult[numOperations];
+            for (int i = 0; i < numOperations; i++) {
+                results[i] = operations.get(i).apply(this, results, i);
+            }
+            db.setTransactionSuccessful();
+            return results;
+        } finally {
+            db.endTransaction();
+        }
+    }
+
     /** Returns a tuple of question marks. For example, if count is 3, returns "(?,?,?)". */
     private String makeQuestionMarkTuple(int count) {
         if (count < 1) {
@@ -143,6 +203,30 @@ public class ChhProvider extends ContentProvider {
         }
         stringBuilder.append(")");
         return stringBuilder.toString();
+    }
+
+    /**
+     * Build a simple {@link SelectionBuilder} to match the requested
+     * {@link Uri}. This is usually enough to support {@link #insert},
+     * {@link #update}, and {@link #delete} operations.
+     */
+    private SelectionBuilder buildSimpleSelection(Uri uri) {
+        final SelectionBuilder builder = new SelectionBuilder();
+        final int match = sUriMatcher.match(uri);
+        switch (match) {
+            case NEWS: {
+                return builder.table(Tables.NEWS);
+            }
+            case NEWS_ID: {
+                final String newsId = News.getNewsId(uri);
+                return builder.table(Tables.NEWS)
+                        .where(News.NEWS_ID + "=?", newsId);
+            }
+
+            default: {
+                throw new UnsupportedOperationException("Unknown uri for " + match + ": " + uri);
+            }
+        }
     }
 
     /**
@@ -168,10 +252,4 @@ public class ChhProvider extends ContentProvider {
         }
     }
 
-    @Override
-    public int update(Uri uri, ContentValues values, String selection,
-            String[] selectionArgs) {
-        // TODO: Implement this to handle requests to update one or more rows.
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
 }

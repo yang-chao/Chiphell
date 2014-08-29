@@ -4,7 +4,6 @@ import android.net.Uri;
 import android.provider.BaseColumns;
 import android.provider.ContactsContract;
 import android.text.TextUtils;
-import android.text.format.DateUtils;
 
 /**
  * Created by yc on 14-8-28.
@@ -44,7 +43,7 @@ public class ChhContract {
         public static final String DEFAULT_SORT = NewsColumns.NEWS_TIME + " DESC";
 
         /** Build {@link Uri} for requested {@link #NEWS_ID}. */
-        public static Uri builNewsUri(String newsId) {
+        public static Uri buildNewsUri(String newsId) {
             return CONTENT_URI.buildUpon().appendPath(newsId).build();
         }
 
