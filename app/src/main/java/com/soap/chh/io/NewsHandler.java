@@ -18,8 +18,10 @@ import java.util.ArrayList;
 public class NewsHandler extends JSONHandler {
 
     private ArrayList<News> mNewses = new ArrayList<News>();
+
     public NewsHandler(Context context) {
         super(context);
+        mUri = ChhContract.News.CONTENT_URI;
     }
 
     @Override

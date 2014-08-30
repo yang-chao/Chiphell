@@ -6,8 +6,8 @@ android {
 
     defaultConfig {
         applicationId "com.soap.chh"
-        minSdkVersion 14
-        targetSdkVersion 20
+        minSdkVersion 15
+        targetSdkVersion 19
         versionCode 1
         versionName "1.0"
     }
@@ -21,8 +21,9 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:support-v4:20.0.0'
+    compile 'com.android.support:support-v4:+'
+    compile 'com.android.support:recyclerview-v7:+'
     compile 'com.google.code.gson:gson:2.+'
     compile 'com.mcxiaoke.volley:library:1.0.6'
-    compile 'com.turbomanage.basic-http-client:http-client-android:0.89'
+//    compile 'com.turbomanage.basic-http-client:http-client-android:0.89'
 }

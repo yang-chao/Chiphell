@@ -12,7 +12,7 @@ public class ChhContract {
 
     public static final String QUERY_PARAMETER_DISTINCT = "distinct";
 
-    interface NewsColumns {
+    public interface NewsColumns {
         String NEWS_ID = "news_id";
         String NEWS_TITLE = "news_title";
         String NEWS_LINK = "news_link";

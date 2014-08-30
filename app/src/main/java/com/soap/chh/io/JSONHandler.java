@@ -20,6 +20,7 @@ import com.google.gson.JsonElement;
 
 import android.content.ContentProviderOperation;
 import android.content.Context;
+import android.net.Uri;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -34,8 +35,26 @@ public abstract class JSONHandler {
 
     protected static Context mContext;
 
+    protected Uri mUri;
+
     public JSONHandler(Context context) {
         mContext = context;
+    }
+
+    /**
+     * Get application context
+     * @return
+     */
+    public Context getContext() {
+        return mContext.getApplicationContext();
+    }
+
+    /**
+     * Get the uri handle with provider
+     * @return
+     */
+    public Uri getUri() {
+        return mUri;
     }
 
     public abstract void makeContentProviderOperations(ArrayList<ContentProviderOperation> list);
