@@ -22,6 +22,10 @@
     <string name="navigation_food">美食</string>
     <string name="navigation_culture">文化</string>
 
-    <!--业界新闻-->
+    <!-- 业界新闻 -->
     <string name="adapter_news_message_count">回%d</string>
+    <string name="title_activity_article">ArticleActivity</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
 </resources>

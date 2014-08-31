@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="actionbar_background">#b10e00</color>
+
+    <!--下拉刷新进度条颜色-->
+    <color name="swiperefresh_progress_color">#ffff4444</color>
 </resources>
+

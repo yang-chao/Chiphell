@@ -1,55 +1,41 @@
 package com.soap.chh.ui;
 
 import android.app.Activity;
-import android.database.ContentObserver;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Bundle;
 import android.app.Fragment;
-import android.os.Handler;
+import android.content.Context;
+import android.content.Intent;
+import android.database.Cursor;
+import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.TextView;
 
 import com.android.volley.Request;
-import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.Volley;
 import com.soap.chh.R;
 import com.soap.chh.io.NewsHandler;
 import com.soap.chh.io.RequestManager;
-import com.soap.chh.io.model.News;
 import com.soap.chh.model.NetToDBRequest;
 import com.soap.chh.provider.ChhContract;
 
-import org.json.JSONArray;
+import static com.soap.chh.util.LogUtils.LOGD;
+import static com.soap.chh.util.LogUtils.makeLogTag;
 
-import java.text.SimpleDateFormat;
 
-import static com.soap.chh.util.LogUtils.*;
-
-/**
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link NewsListFragment.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link NewsListFragment#newInstance} factory method to
- * create an instance of this fragment.
- *
- */
-public class NewsListFragment extends Fragment {
+public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener, AbsListView.OnScrollListener {
     private static final String TAG = makeLogTag(NewsListFragment.class);
-
-    private OnFragmentInteractionListener mListener;
 
     private Cursor mCursor;
     private NewsListAdapter mAdapter;
 
+    private RecyclerView mRecyclerView;
+    private SwipeRefreshLayout mSwipeRefreshLayout;
 
     /**
      * Use this factory method to create a new instance of
@@ -57,44 +43,18 @@ public class NewsListFragment extends Fragment {
      *
      * @return A new instance of fragment NewsListFragment.
      */
-    // TODO: Rename and change types and number of parameters
     public static NewsListFragment newInstance() {
         NewsListFragment fragment = new NewsListFragment();
         Bundle args = new Bundle();
         fragment.setArguments(args);
         return fragment;
     }
-    public NewsListFragment() {
-        // Required empty public constructor
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Request<Boolean> request = new NetToDBRequest<Boolean>(new NewsHandler(getActivity()),
-                "http://192.168.1.111:8000/news/0/30/", new Response.Listener<Boolean>() {
-            @Override
-            public void onResponse(Boolean response) {
-                if (response) {
-                    LOGD(TAG, "onResponse: Download json data from net and insert into db successfullly");
-
-                    if (mAdapter != null) {
-                        Cursor cursor = getActivity().getContentResolver().query(ChhContract.News.CONTENT_URI, null, null, null, null);
-                        mAdapter.swapCursor(cursor);
-                    }
-                } else {
-                    LOGD(TAG, "onResponse: Download json data or insert failed");
-                }
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                LOGD(TAG, "onErrorResponse : " + error.getMessage());
-            }
-        });
-
-        RequestManager.getRequestQueue().add(request);
+        requestData();
     }
 
     @Override
@@ -108,35 +68,23 @@ public class NewsListFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         mCursor = getActivity().getContentResolver().query(ChhContract.News.CONTENT_URI, null, null, null, null);
-        mAdapter = new NewsListAdapter(mCursor);
+        mAdapter = new NewsListAdapter(getActivity(), mCursor);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
-        RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.list);
-        recyclerView.setLayoutManager(linearLayoutManager);
-        recyclerView.setAdapter(mAdapter);
+        mRecyclerView = (RecyclerView) view.findViewById(R.id.list);
+        mRecyclerView.setLayoutManager(linearLayoutManager);
+        mRecyclerView.setAdapter(mAdapter);
+
+        mSwipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe_layout);
+        mSwipeRefreshLayout.setOnRefreshListener(this);
+        mSwipeRefreshLayout.setColorSchemeResources(android.R.color.holo_red_light, android.R.color.holo_green_light,
+                android.R.color.holo_blue_bright, android.R.color.holo_orange_light);
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
-    }
 
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-//        try {
-//            mListener = (OnFragmentInteractionListener) activity;
-//        } catch (ClassCastException e) {
-//            throw new ClassCastException(activity.toString()
-//                    + " must implement OnFragmentInteractionListener");
-//        }
-    }
 
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mListener = null;
     }
 
     @Override
@@ -144,32 +92,67 @@ public class NewsListFragment extends Fragment {
         super.onDestroy();
         if (mCursor != null) {
             mCursor.close();
-            mCursor = null;
         }
     }
 
+    @Override
+    public void onRefresh() {
+        requestData();
+    }
+
     /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
+     * 请求网络数据
      */
-    public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        public void onFragmentInteraction(Uri uri);
+    private void requestData() {
+        Request<Boolean> request = new NetToDBRequest<Boolean>(new NewsHandler(getActivity()),
+                "http://192.168.1.111:8000/news/0/30/", new Response.Listener<Boolean>() {
+            @Override
+            public void onResponse(Boolean response) {
+                if (response) {
+                    LOGD(TAG, "onResponse: Download json data from net and insert into db successfullly");
+
+                    if (mAdapter != null) {
+                        Cursor cursor = getActivity().getContentResolver().query(ChhContract.News.CONTENT_URI, null, null, null, null);
+                        mAdapter.changeCursor(cursor);
+                    }
+                } else {
+                    LOGD(TAG, "onResponse: Download json data or insert failed");
+                }
+                if (mSwipeRefreshLayout != null) {
+                    mSwipeRefreshLayout.setRefreshing(false);
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                LOGD(TAG, "onErrorResponse : " + error.getMessage());
+                if (mSwipeRefreshLayout != null) {
+                    mSwipeRefreshLayout.setRefreshing(false);
+                }
+            }
+        });
+        RequestManager.getRequestQueue().add(request);
+    }
+
+    @Override
+    public void onScrollStateChanged(AbsListView view, int scrollState) {
+
+    }
+
+    @Override
+    public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+        int topRowVerticalPosition =
+                (mRecyclerView == null || mRecyclerView.getChildCount() == 0) ? 0 : mRecyclerView.getChildAt(0).getTop();
+        mSwipeRefreshLayout.setEnabled(topRowVerticalPosition >= 0);
     }
 
     static class NewsListAdapter extends RecyclerView.Adapter<NewsListAdapter.ViewHolder> {
 
         private LayoutInflater mInflater;
         private Cursor mCursor;
-        private SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        private Context mContext;
 
-        static class ViewHolder extends RecyclerView.ViewHolder {
+        class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
             private TextView title;
             private TextView author;
@@ -182,27 +165,39 @@ public class NewsListFragment extends Fragment {
                 time = (TextView) itemView.findViewById(R.id.time);
                 author = (TextView) itemView.findViewById(R.id.author);
                 messageCount = (TextView) itemView.findViewById(R.id.message_count);
+                itemView.setOnClickListener(this);
+            }
+
+            @Override
+            public void onClick(View v) {
+                mCursor.moveToPosition(getPosition());
+                Intent intent = new Intent(mContext, ArticleActivity.class);
+                intent.putExtra(ArticleFragment.ARG_TITLE, mCursor.getString(mCursor.getColumnIndex(ChhContract.NewsColumns.NEWS_TITLE)));
+                intent.putExtra(ArticleFragment.ARG_URL, mCursor.getString(mCursor.getColumnIndex(ChhContract.NewsColumns.NEWS_LINK)));
+                mContext.startActivity(intent);
             }
         }
 
-        public NewsListAdapter(Cursor cursor) {
+        public NewsListAdapter(Context context, Cursor cursor) {
+            mContext = context;
             mCursor = cursor;
+            mInflater = LayoutInflater.from(context);
         }
 
         @Override
-        public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
-            View v = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.adapter_news_list, viewGroup, false);
+        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View v = mInflater.inflate(R.layout.adapter_news_list, parent, false);
             ViewHolder holder = new ViewHolder(v);
             return holder;
         }
 
         @Override
-        public void onBindViewHolder(ViewHolder viewHolder, int i) {
-            mCursor.moveToPosition(i);
+        public void onBindViewHolder(ViewHolder viewHolder, int position) {
+            mCursor.moveToPosition(position);
             viewHolder.title.setText(mCursor.getString(mCursor.getColumnIndex(ChhContract.NewsColumns.NEWS_TITLE)));
             viewHolder.author.setText(mCursor.getString(mCursor.getColumnIndex(ChhContract.NewsColumns.NEWS_AUTHOR)));
             viewHolder.time.setText(mCursor.getString(mCursor.getColumnIndex(ChhContract.NewsColumns.NEWS_TIME)));
-            viewHolder.messageCount.setText(viewHolder.messageCount.getContext()
+            viewHolder.messageCount.setText(mContext
                     .getString(R.string.adapter_news_message_count,
                             mCursor.getInt(mCursor.getColumnIndex(ChhContract.NewsColumns.NEWS_MESSAGE_COUNT))));
         }
@@ -220,6 +215,19 @@ public class NewsListFragment extends Fragment {
             mCursor = newCursor;
             notifyDataSetChanged();
             return oldCursor;
+        }
+
+        /**
+         * Change the underlying cursor to a new cursor. If there is an existing cursor it will be
+         * closed.
+         *
+         * @param cursor The new cursor to be used
+         */
+        public void changeCursor(Cursor cursor) {
+            Cursor old = swapCursor(cursor);
+            if (old != null) {
+                old.close();
+            }
         }
 
     }
