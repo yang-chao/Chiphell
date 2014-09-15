@@ -20,7 +20,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
 /**
- * Created by yc on 14-8-30.
+ * Created by yc on 14-8-30.<br>
+ * 下载网络数据并保存到数据库
  */
 public class NetToDBRequest<T> extends Request<T> {
 
