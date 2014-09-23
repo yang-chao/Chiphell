@@ -29,7 +29,7 @@ import static com.soap.chh.util.LogUtils.LOGD;
 import static com.soap.chh.util.LogUtils.makeLogTag;
 
 
-public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener, AbsListView.OnScrollListener {
+public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener, RecyclerView.OnScrollListener {
     private static final String TAG = makeLogTag(NewsListFragment.class);
 
     private Cursor mCursor;
@@ -37,6 +37,9 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
 
     private RecyclerView mRecyclerView;
     private SwipeRefreshLayout mSwipeRefreshLayout;
+
+    private static final int ITEM = 0;
+    private static final int FOOTER = 1;
 
     /**
      * Use this factory method to create a new instance of
@@ -74,6 +77,7 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
         mRecyclerView = (RecyclerView) view.findViewById(R.id.list);
         mRecyclerView.setLayoutManager(linearLayoutManager);
         mRecyclerView.setAdapter(mAdapter);
+        mRecyclerView.setOnScrollListener(this);
 
         mSwipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe_layout);
         mSwipeRefreshLayout.setOnRefreshListener(this);
@@ -136,15 +140,21 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
     }
 
     @Override
-    public void onScrollStateChanged(AbsListView view, int scrollState) {
+    public void onScrollStateChanged(int newlState) {
 
     }
 
     @Override
-    public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+    public void onScrolled(int dx, int dy) {
         int topRowVerticalPosition =
                 (mRecyclerView == null || mRecyclerView.getChildCount() == 0) ? 0 : mRecyclerView.getChildAt(0).getTop();
         mSwipeRefreshLayout.setEnabled(topRowVerticalPosition >= 0);
+
+        LinearLayoutManager layoutManager = (LinearLayoutManager) mRecyclerView.getLayoutManager();
+        int lastPos = layoutManager.findLastVisibleItemPosition();
+        if (mCursor != null && mCursor.getCount() == lastPos) {
+
+        }
     }
 
     static class NewsListAdapter extends RecyclerView.Adapter<NewsListAdapter.ViewHolder> {
@@ -187,9 +197,15 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
 
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View v = mInflater.inflate(R.layout.adapter_news_list, parent, false);
-            ViewHolder holder = new ViewHolder(v);
-            return holder;
+
+            switch (viewType) {
+                case FOOTER:
+                    return null;
+                default:
+                case ITEM:
+                    return new ViewHolder(mInflater.inflate(R.layout.adapter_news_list, parent, false));
+
+            }
         }
 
         @Override
