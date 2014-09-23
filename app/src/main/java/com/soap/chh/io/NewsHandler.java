@@ -18,10 +18,12 @@ import java.util.ArrayList;
 public class NewsHandler extends JSONHandler {
 
     private ArrayList<News> mNewses = new ArrayList<News>();
+    private boolean mAppend;
 
-    public NewsHandler(Context context) {
+    public NewsHandler(Context context, boolean append) {
         super(context);
         mUri = ChhContract.News.CONTENT_URI;
+        mAppend = append;
     }
 
     @Override
@@ -33,9 +35,11 @@ public class NewsHandler extends JSONHandler {
 
     @Override
     public void makeContentProviderOperations(ArrayList<ContentProviderOperation> list) {
-        // delete existing data
-        Uri uri = ChhContract.News.CONTENT_URI;
-        list.add(ContentProviderOperation.newDelete(uri).build());
+        if (!mAppend) {
+            // delete existing data
+            Uri uri = ChhContract.News.CONTENT_URI;
+            list.add(ContentProviderOperation.newDelete(uri).build());
+        }
 
         for (News news : mNewses) {
             insertNews(news, list);

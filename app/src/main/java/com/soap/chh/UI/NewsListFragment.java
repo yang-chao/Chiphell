@@ -32,14 +32,13 @@ import static com.soap.chh.util.LogUtils.makeLogTag;
 public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener, RecyclerView.OnScrollListener {
     private static final String TAG = makeLogTag(NewsListFragment.class);
 
-    private Cursor mCursor;
     private NewsListAdapter mAdapter;
 
     private RecyclerView mRecyclerView;
     private SwipeRefreshLayout mSwipeRefreshLayout;
+    private View mFooterView;
 
-    private static final int ITEM = 0;
-    private static final int FOOTER = 1;
+    private int mPageIndex = 1;
 
     /**
      * Use this factory method to create a new instance of
@@ -58,7 +57,7 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        requestData();
+        requestData(false);
     }
 
     @Override
@@ -71,8 +70,8 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        mCursor = getActivity().getContentResolver().query(ChhContract.News.CONTENT_URI, null, null, null, null);
-        mAdapter = new NewsListAdapter(getActivity(), mCursor);
+        Cursor cursor = getActivity().getContentResolver().query(ChhContract.News.CONTENT_URI, null, null, null, null);
+        mAdapter = new NewsListAdapter(getActivity(), cursor);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
         mRecyclerView = (RecyclerView) view.findViewById(R.id.list);
         mRecyclerView.setLayoutManager(linearLayoutManager);
@@ -83,6 +82,8 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
         mSwipeRefreshLayout.setOnRefreshListener(this);
         mSwipeRefreshLayout.setColorSchemeResources(android.R.color.holo_red_light, android.R.color.holo_green_light,
                 android.R.color.holo_blue_bright, android.R.color.holo_orange_light);
+
+        mFooterView = LayoutInflater.from(getActivity()).inflate(R.layout.adapter_footer, null);
     }
 
 
@@ -95,22 +96,28 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (mCursor != null) {
-            mCursor.close();
+        if (mAdapter != null) {
+            mAdapter.release();
         }
     }
 
     @Override
     public void onRefresh() {
-        requestData();
+        requestData(false);
     }
 
     /**
      * 请求网络数据
      */
-    private void requestData() {
-        Request<Boolean> request = new NetToDBRequest<Boolean>(new NewsHandler(getActivity()),
-                String.format(Config.URL_NEWS_LIST, 1, 30), new Response.Listener<Boolean>() {
+    private void requestData(boolean more) {
+        if (more) { // 加载更多
+            mPageIndex++;
+        } else { // 重新加载
+            mPageIndex = 1;
+        }
+
+        Request<Boolean> request = new NetToDBRequest<Boolean>(new NewsHandler(getActivity(), more),
+                String.format(Config.URL_NEWS_LIST, mPageIndex, Config.PAGE_COUNT), new Response.Listener<Boolean>() {
             @Override
             public void onResponse(Boolean response) {
                 if (response) {
@@ -118,6 +125,9 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
 
                     if (mAdapter != null) {
                         Cursor cursor = getActivity().getContentResolver().query(ChhContract.News.CONTENT_URI, null, null, null, null);
+//                        if (cursor != null) {
+//                            cursor.moveToPosition((mPageIndex - 1) * Config.PAGE_COUNT);
+//                        }
                         mAdapter.changeCursor(cursor);
                     }
                 } else {
@@ -141,7 +151,16 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
 
     @Override
     public void onScrollStateChanged(int newlState) {
-
+        if (newlState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {
+            LinearLayoutManager layoutManager = (LinearLayoutManager) mRecyclerView.getLayoutManager();
+            int lastPos = layoutManager.findLastVisibleItemPosition();
+            LOGD(TAG, "lastPos: " + lastPos);
+            LOGD(TAG, "cursor count: " + mAdapter.getCursor().getCount());
+            if (mAdapter.getCursor().getCount() - 1 == lastPos) {
+                LOGD(TAG, "加载下一页");
+                requestData(true);
+            }
+        }
     }
 
     @Override
@@ -150,11 +169,7 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
                 (mRecyclerView == null || mRecyclerView.getChildCount() == 0) ? 0 : mRecyclerView.getChildAt(0).getTop();
         mSwipeRefreshLayout.setEnabled(topRowVerticalPosition >= 0);
 
-        LinearLayoutManager layoutManager = (LinearLayoutManager) mRecyclerView.getLayoutManager();
-        int lastPos = layoutManager.findLastVisibleItemPosition();
-        if (mCursor != null && mCursor.getCount() == lastPos) {
 
-        }
     }
 
     static class NewsListAdapter extends RecyclerView.Adapter<NewsListAdapter.ViewHolder> {
@@ -198,14 +213,13 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 
-            switch (viewType) {
-                case FOOTER:
-                    return null;
-                default:
-                case ITEM:
-                    return new ViewHolder(mInflater.inflate(R.layout.adapter_news_list, parent, false));
-
-            }
+//            switch (viewType) {
+//                case R.layout.adapter_footer:
+//                    return null;
+//                default:
+//                case R.layout.adapter_news_list:
+//            }
+            return new ViewHolder(mInflater.inflate(R.layout.adapter_news_list, parent, false));
         }
 
         @Override
@@ -222,6 +236,10 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
         @Override
         public int getItemCount() {
             return mCursor == null ? 0 : mCursor.getCount();
+        }
+
+        public Cursor getCursor() {
+            return mCursor;
         }
 
         public Cursor swapCursor(Cursor newCursor) {
@@ -244,6 +262,12 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
             Cursor old = swapCursor(cursor);
             if (old != null) {
                 old.close();
+            }
+        }
+
+        public void release() {
+            if (mCursor != null) {
+                mCursor.close();
             }
         }
 
