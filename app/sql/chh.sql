@@ -1,5 +1,5 @@
-CREATE DATABASE  IF NOT EXISTS `cral_chh` /*!40100 DEFAULT CHARACTER SET utf8 */;
-USE `cral_chh`;
+-- CREATE DATABASE  IF NOT EXISTS `cral_chh` /*!40100 DEFAULT CHARACTER SET utf8 */;
+USE `SnoSmrwaDsKUpRqkQEhT`;
 -- MySQL dump 10.13  Distrib 5.6.17, for osx10.6 (i386)
 --
 -- Host: localhost    Database: cral_chh

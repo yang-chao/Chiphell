@@ -18,6 +18,7 @@ import android.widget.TextView;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.soap.chh.Config;
 import com.soap.chh.R;
 import com.soap.chh.io.NewsHandler;
 import com.soap.chh.io.RequestManager;
@@ -105,7 +106,7 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
      */
     private void requestData() {
         Request<Boolean> request = new NetToDBRequest<Boolean>(new NewsHandler(getActivity()),
-                "http://192.168.1.111:8000/news/0/30/", new Response.Listener<Boolean>() {
+                String.format(Config.URL_NEWS_LIST, 1, 30), new Response.Listener<Boolean>() {
             @Override
             public void onResponse(Boolean response) {
                 if (response) {
