@@ -20,6 +20,7 @@ public class ChhDatabase extends SQLiteOpenHelper {
 
     interface Tables {
         String NEWS = "news";
+        String Photo = "photo";
     }
 
     public ChhDatabase(Context context) {
@@ -28,6 +29,7 @@ public class ChhDatabase extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
+        // 新闻
         db.execSQL("CREATE TABLE " + Tables.NEWS + " ("
                 + BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
                 + NewsColumns.NEWS_ID + " TEXT NOT NULL,"
@@ -37,6 +39,16 @@ public class ChhDatabase extends SQLiteOpenHelper {
                 + NewsColumns.NEWS_CATEGORY + " TEXT,"
                 + NewsColumns.NEWS_AUTHOR + " TEXT,"
                 + NewsColumns.NEWS_MESSAGE_COUNT + " INTEGER DEFAULT 0)");
+
+        // 照片
+        db.execSQL("CREATE TABLE " + Tables.Photo + " ("
+                + BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + PhotoColumns.PHOTO_ID + " TEXT NOT NULL,"
+                + PhotoColumns.PHOTO_TITLE + " TEXT NOT NULL,"
+                + PhotoColumns.PHOTO_LINK + " TEXT NOT NULL,"
+                + PhotoColumns.PHOTO_TIME + " TEXT,"
+                + PhotoColumns.PHOTO_DIGEST + " TEXT,"
+                + PhotoColumns.PHOTO_IMAGE + " TEXT)");
     }
 
     @Override

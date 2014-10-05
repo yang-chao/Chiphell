@@ -38,6 +38,8 @@ public abstract class JSONHandler {
 
     protected Uri mUri;
 
+    protected boolean mAppend;
+
     public JSONHandler(Context context) {
         mContext = context;
     }

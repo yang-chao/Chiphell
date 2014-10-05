@@ -3,7 +3,7 @@ package com.soap.chh.io.model;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * Created by yc-mac on 14-8-28.
+ * Created by yc on 14-8-28.
  */
 public class News {
     public String id;

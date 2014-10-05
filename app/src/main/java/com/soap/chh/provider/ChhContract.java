@@ -22,12 +22,22 @@ public class ChhContract {
         String NEWS_MESSAGE_COUNT = "news_message_count";
     }
 
+    public interface PhotoColumns {
+        String PHOTO_ID = "photo_id";
+        String PHOTO_TITLE = "photo_title";
+        String PHOTO_LINK = "photo_link";
+        String PHOTO_TIME = "photo_time";
+        String PHOTO_IMAGE = "photo_image";
+        String PHOTO_DIGEST = "photo_digest";
+    }
+
 
     public static final String CONTENT_AUTHORITY = "com.soap.chh";
 
     public static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
 
     private static final String PATH_NEWS = "news";
+    private static final String PATH_PHOTO = "photo";
 
     public static class News implements NewsColumns, BaseColumns {
 
@@ -51,7 +61,29 @@ public class ChhContract {
         public static String getNewsId(Uri uri) {
             return uri.getPathSegments().get(1);
         }
+    }
 
+    public static class Photo implements PhotoColumns, BaseColumns {
+
+        public static final Uri CONTENT_URI = BASE_CONTENT_URI.buildUpon().appendPath(PATH_PHOTO).build();
+
+        public static final String CONTENT_TYPE =
+                "vnd.android.cursor.dir/vnd.chh.photo";
+        public static final String CONTENT_ITEM_TYPE =
+                "vnd.android.cursor.item/vnd.chh.photo";
+
+        /** "ORDER BY" clauses. */
+        public static final String DEFAULT_SORT = PhotoColumns.PHOTO_TIME + " DESC";
+
+        /** Build {@link Uri} for requested {@link #PHOTO_ID}. */
+        public static Uri buildPhotoUri(String photoId) {
+            return CONTENT_URI.buildUpon().appendPath(photoId).build();
+        }
+
+        /** Read {@link #PHOTO_ID} from {@link Photo} {@link Uri}. */
+        public static String getPhotoId(Uri uri) {
+            return uri.getPathSegments().get(1);
+        }
     }
 
     public static Uri addCallerIsSyncAdapterParameter(Uri uri) {

@@ -16,6 +16,7 @@ import android.util.Log;
 import com.soap.chh.util.SelectionBuilder;
 import com.soap.chh.provider.ChhDatabase.Tables;
 import com.soap.chh.provider.ChhContract.News;
+import com.soap.chh.provider.ChhContract.Photo;
 import static com.soap.chh.util.LogUtils.*;
 
 import java.util.ArrayList;
@@ -32,6 +33,9 @@ public class ChhProvider extends ContentProvider {
     private static final int NEWS = 100;
     private static final int NEWS_ID = 101;
 
+    private static final int PHOTO = 102;
+    private static final int PHOTO_ID = 103;
+
     /**
      * Build and return a {@link UriMatcher} that catches all {@link Uri}
      * variations supported by this {@link ContentProvider}.
@@ -42,6 +46,9 @@ public class ChhProvider extends ContentProvider {
 
         matcher.addURI(authority, "news", NEWS);
         matcher.addURI(authority, "news/*", NEWS_ID);
+
+        matcher.addURI(authority, "photo", PHOTO);
+        matcher.addURI(authority, "photo/*", PHOTO_ID);
 
         return matcher;
     }
@@ -107,6 +114,10 @@ public class ChhProvider extends ContentProvider {
                 return ChhContract.News.CONTENT_TYPE;
             case NEWS_ID:
                 return ChhContract.News.CONTENT_ITEM_TYPE;
+            case PHOTO:
+                return ChhContract.Photo.CONTENT_TYPE;
+            case PHOTO_ID:
+                return ChhContract.Photo.CONTENT_ITEM_TYPE;
 
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
@@ -126,6 +137,11 @@ public class ChhProvider extends ContentProvider {
                 db.insertOrThrow(Tables.NEWS, null, values);
                 notifyChange(uri);
                 return News.buildNewsUri(values.getAsString(News.NEWS_ID));
+            }
+            case PHOTO: {
+                db.insertOrThrow(Tables.Photo, null, values);
+                notifyChange(uri);
+                return Photo.buildPhotoUri(values.getAsString(Photo.PHOTO_ID));
             }
             default: {
                 throw new UnsupportedOperationException("Unknown insert uri: " + uri);
@@ -222,6 +238,14 @@ public class ChhProvider extends ContentProvider {
                 return builder.table(Tables.NEWS)
                         .where(News.NEWS_ID + "=?", newsId);
             }
+            case PHOTO: {
+                return builder.table(Tables.Photo);
+            }
+            case PHOTO_ID: {
+                final String photoId = Photo.getPhotoId(uri);
+                return builder.table(Tables.Photo)
+                        .where(Photo.PHOTO_ID + "=?", photoId);
+            }
 
             default: {
                 throw new UnsupportedOperationException("Unknown uri for " + match + ": " + uri);
@@ -244,6 +268,14 @@ public class ChhProvider extends ContentProvider {
                 final String newsId = News.getNewsId(uri);
                 return builder.table(Tables.NEWS)
                         .where(News.NEWS_ID + "=?", newsId);
+            }
+            case PHOTO: {
+                return builder.table(Tables.Photo);
+            }
+            case PHOTO_ID: {
+                final String photoId = Photo.getPhotoId(uri);
+                return builder.table(Tables.Photo)
+                        .where(Photo.PHOTO_ID + "=?", photoId);
             }
 
             default: {

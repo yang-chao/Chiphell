@@ -25,5 +25,6 @@ dependencies {
     compile 'com.android.support:recyclerview-v7:+'
     compile 'com.google.code.gson:gson:2.+'
     compile 'com.mcxiaoke.volley:library:1.0.6'
+    compile 'com.squareup.picasso:picasso:2.3.4'
 //    compile 'com.turbomanage.basic-http-client:http-client-android:0.89'
 }

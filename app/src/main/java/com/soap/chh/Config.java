@@ -11,4 +11,6 @@ public class Config {
     public static final String URL_HOST = "http://chhapi.duapp.com";
 
     public static final String URL_NEWS_LIST = URL_HOST + "/news/%d/%d";
+
+    public static final String URL_PHOTO_LIST = URL_HOST + "/photo/%d/%d";
 }

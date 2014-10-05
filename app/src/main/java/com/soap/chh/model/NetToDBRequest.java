@@ -2,9 +2,7 @@ package com.soap.chh.model;
 
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
-import android.content.Context;
 import android.content.OperationApplicationException;
-import android.net.Uri;
 import android.os.RemoteException;
 
 import com.android.volley.NetworkResponse;

@@ -1,44 +1,29 @@
 package com.soap.chh.ui;
 
-import android.app.Activity;
-import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AbsListView;
 import android.widget.TextView;
 
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
 import com.soap.chh.Config;
 import com.soap.chh.R;
+import com.soap.chh.io.JSONHandler;
 import com.soap.chh.io.NewsHandler;
-import com.soap.chh.io.RequestManager;
-import com.soap.chh.model.NetToDBRequest;
 import com.soap.chh.provider.ChhContract;
+import com.soap.chh.ui.base.BaseListAdapter;
+import com.soap.chh.ui.base.BaseListFragment;
 
-import static com.soap.chh.util.LogUtils.LOGD;
 import static com.soap.chh.util.LogUtils.makeLogTag;
 
 
-public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener, RecyclerView.OnScrollListener {
+public class NewsListFragment extends BaseListFragment {
     private static final String TAG = makeLogTag(NewsListFragment.class);
-
-    private NewsListAdapter mAdapter;
-
-    private RecyclerView mRecyclerView;
-    private SwipeRefreshLayout mSwipeRefreshLayout;
-    private View mFooterView;
-
-    private int mPageIndex = 1;
 
     /**
      * Use this factory method to create a new instance of
@@ -54,129 +39,64 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        requestData(false);
+    protected BaseListAdapter createAdapter() {
+        Cursor cursor = getActivity().getContentResolver().query(getUri(), null, null, null, null);
+        return new NewsAdapter(getActivity(), cursor);
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_news_list, container, false);
+    protected JSONHandler createJSONHandler(boolean more) {
+        return new NewsHandler(getActivity(), more);
     }
 
     @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
-        Cursor cursor = getActivity().getContentResolver().query(ChhContract.News.CONTENT_URI, null, null, null, null);
-        mAdapter = new NewsListAdapter(getActivity(), cursor);
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
-        mRecyclerView = (RecyclerView) view.findViewById(R.id.list);
-        mRecyclerView.setLayoutManager(linearLayoutManager);
-        mRecyclerView.setAdapter(mAdapter);
-        mRecyclerView.setOnScrollListener(this);
-
-        mSwipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe_layout);
-        mSwipeRefreshLayout.setOnRefreshListener(this);
-        mSwipeRefreshLayout.setColorSchemeResources(android.R.color.holo_red_light, android.R.color.holo_green_light,
-                android.R.color.holo_blue_bright, android.R.color.holo_orange_light);
-
-        mFooterView = LayoutInflater.from(getActivity()).inflate(R.layout.adapter_footer, null);
-    }
-
-
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-
+    protected String getUrl() {
+        return Config.URL_NEWS_LIST;
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (mAdapter != null) {
-            mAdapter.release();
-        }
+    protected Uri getUri() {
+        return ChhContract.News.CONTENT_URI;
     }
 
-    @Override
-    public void onRefresh() {
-        requestData(false);
-    }
 
-    /**
-     * 请求网络数据
-     */
-    private void requestData(boolean more) {
-        if (more) { // 加载更多
-            mPageIndex++;
-        } else { // 重新加载
-            mPageIndex = 1;
+    private static class NewsAdapter extends BaseListAdapter {
+
+        public NewsAdapter(Context context, Cursor cursor) {
+            super(context, cursor);
+            mContext = context;
+            mCursor = cursor;
+            mInflater = LayoutInflater.from(context);
         }
 
-        Request<Boolean> request = new NetToDBRequest<Boolean>(new NewsHandler(getActivity(), more),
-                String.format(Config.URL_NEWS_LIST, mPageIndex, Config.PAGE_COUNT), new Response.Listener<Boolean>() {
-            @Override
-            public void onResponse(Boolean response) {
-                if (response) {
-                    LOGD(TAG, "onResponse: Download json data from net and insert into db successfullly");
+        @Override
+        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 
-                    if (mAdapter != null) {
-                        Cursor cursor = getActivity().getContentResolver().query(ChhContract.News.CONTENT_URI, null, null, null, null);
-//                        if (cursor != null) {
-//                            cursor.moveToPosition((mPageIndex - 1) * Config.PAGE_COUNT);
-//                        }
-                        mAdapter.changeCursor(cursor);
-                    }
-                } else {
-                    LOGD(TAG, "onResponse: Download json data or insert failed");
-                }
-                if (mSwipeRefreshLayout != null) {
-                    mSwipeRefreshLayout.setRefreshing(false);
-                }
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                LOGD(TAG, "onErrorResponse : " + error.getMessage());
-                if (mSwipeRefreshLayout != null) {
-                    mSwipeRefreshLayout.setRefreshing(false);
-                }
-            }
-        });
-        RequestManager.getRequestQueue().add(request);
-    }
-
-    @Override
-    public void onScrollStateChanged(int newlState) {
-        if (newlState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {
-            LinearLayoutManager layoutManager = (LinearLayoutManager) mRecyclerView.getLayoutManager();
-            int lastPos = layoutManager.findLastVisibleItemPosition();
-            LOGD(TAG, "lastPos: " + lastPos);
-            LOGD(TAG, "cursor count: " + mAdapter.getCursor().getCount());
-            if (mAdapter.getCursor().getCount() - 1 == lastPos) {
-                LOGD(TAG, "加载下一页");
-                requestData(true);
-            }
+//            switch (viewType) {
+//                case R.layout.adapter_footer:
+//                    return null;
+//                default:
+//                case R.layout.adapter_news_list:
+//            }
+            return new ViewHolder(mInflater.inflate(R.layout.adapter_news, parent, false));
         }
-    }
 
-    @Override
-    public void onScrolled(int dx, int dy) {
-        int topRowVerticalPosition =
-                (mRecyclerView == null || mRecyclerView.getChildCount() == 0) ? 0 : mRecyclerView.getChildAt(0).getTop();
-        mSwipeRefreshLayout.setEnabled(topRowVerticalPosition >= 0);
+        @Override
+        public void onBindViewHolder(RecyclerView.ViewHolder viewHolder, int position) {
+            mCursor.moveToPosition(position);
+            ((ViewHolder) viewHolder).title.setText(mCursor.getString(mCursor.getColumnIndex(ChhContract.NewsColumns.NEWS_TITLE)));
+            ((ViewHolder) viewHolder).author.setText(mCursor.getString(mCursor.getColumnIndex(ChhContract.NewsColumns.NEWS_AUTHOR)));
+            ((ViewHolder) viewHolder).time.setText(mCursor.getString(mCursor.getColumnIndex(ChhContract.NewsColumns.NEWS_TIME)));
+            ((ViewHolder) viewHolder).messageCount.setText(mContext
+                    .getString(R.string.adapter_news_message_count,
+                            mCursor.getInt(mCursor.getColumnIndex(ChhContract.NewsColumns.NEWS_MESSAGE_COUNT))));
+        }
 
+        @Override
+        public int getItemCount() {
+            return mCursor == null ? 0 : mCursor.getCount();
+        }
 
-    }
-
-    static class NewsListAdapter extends RecyclerView.Adapter<NewsListAdapter.ViewHolder> {
-
-        private LayoutInflater mInflater;
-        private Cursor mCursor;
-        private Context mContext;
 
         class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
@@ -203,74 +123,6 @@ public class NewsListFragment extends Fragment implements SwipeRefreshLayout.OnR
                 mContext.startActivity(intent);
             }
         }
-
-        public NewsListAdapter(Context context, Cursor cursor) {
-            mContext = context;
-            mCursor = cursor;
-            mInflater = LayoutInflater.from(context);
-        }
-
-        @Override
-        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-
-//            switch (viewType) {
-//                case R.layout.adapter_footer:
-//                    return null;
-//                default:
-//                case R.layout.adapter_news_list:
-//            }
-            return new ViewHolder(mInflater.inflate(R.layout.adapter_news_list, parent, false));
-        }
-
-        @Override
-        public void onBindViewHolder(ViewHolder viewHolder, int position) {
-            mCursor.moveToPosition(position);
-            viewHolder.title.setText(mCursor.getString(mCursor.getColumnIndex(ChhContract.NewsColumns.NEWS_TITLE)));
-            viewHolder.author.setText(mCursor.getString(mCursor.getColumnIndex(ChhContract.NewsColumns.NEWS_AUTHOR)));
-            viewHolder.time.setText(mCursor.getString(mCursor.getColumnIndex(ChhContract.NewsColumns.NEWS_TIME)));
-            viewHolder.messageCount.setText(mContext
-                    .getString(R.string.adapter_news_message_count,
-                            mCursor.getInt(mCursor.getColumnIndex(ChhContract.NewsColumns.NEWS_MESSAGE_COUNT))));
-        }
-
-        @Override
-        public int getItemCount() {
-            return mCursor == null ? 0 : mCursor.getCount();
-        }
-
-        public Cursor getCursor() {
-            return mCursor;
-        }
-
-        public Cursor swapCursor(Cursor newCursor) {
-            if (newCursor == mCursor) {
-                return null;
-            }
-            Cursor oldCursor = mCursor;
-            mCursor = newCursor;
-            notifyDataSetChanged();
-            return oldCursor;
-        }
-
-        /**
-         * Change the underlying cursor to a new cursor. If there is an existing cursor it will be
-         * closed.
-         *
-         * @param cursor The new cursor to be used
-         */
-        public void changeCursor(Cursor cursor) {
-            Cursor old = swapCursor(cursor);
-            if (old != null) {
-                old.close();
-            }
-        }
-
-        public void release() {
-            if (mCursor != null) {
-                mCursor.close();
-            }
-        }
-
     }
 
 }

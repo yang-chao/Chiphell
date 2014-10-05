@@ -50,9 +50,14 @@ public class MainActivity extends Activity
         FragmentManager fragmentManager = getFragmentManager();
 
         switch (position) {
-            case 0:
+            case 0: // 新闻
                 fragmentManager.beginTransaction()
                         .replace(R.id.container, NewsListFragment.newInstance())
+                        .commit();
+                break;
+            case 5: // 照片
+                fragmentManager.beginTransaction()
+                        .replace(R.id.container, PhotoListFragment.newInstance())
                         .commit();
                 break;
             default:

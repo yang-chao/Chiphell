@@ -18,7 +18,6 @@ import java.util.ArrayList;
 public class NewsHandler extends JSONHandler {
 
     private ArrayList<News> mNewses = new ArrayList<News>();
-    private boolean mAppend;
 
     public NewsHandler(Context context, boolean append) {
         super(context);
