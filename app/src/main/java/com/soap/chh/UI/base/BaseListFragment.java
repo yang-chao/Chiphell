@@ -28,8 +28,7 @@ import static com.soap.chh.util.LogUtils.makeLogTag;
 /**
  * Created by yc-mac on 14-10-4.
  */
-public abstract class BaseListFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener,
-        RecyclerView.OnScrollListener {
+public abstract class BaseListFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
     private static final String TAG = makeLogTag(BaseListFragment.class);
 
     private BaseListAdapter mAdapter;
@@ -65,7 +64,28 @@ public abstract class BaseListFragment extends Fragment implements SwipeRefreshL
         mRecyclerView = (RecyclerView) view.findViewById(R.id.list);
         mRecyclerView.setLayoutManager(linearLayoutManager);
         mRecyclerView.setAdapter(mAdapter);
-        mRecyclerView.setOnScrollListener(this);
+        mRecyclerView.setOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+                if (newState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {
+                    LinearLayoutManager layoutManager = (LinearLayoutManager) mRecyclerView.getLayoutManager();
+                    int lastPos = layoutManager.findLastVisibleItemPosition();
+                    LOGD(TAG, "lastPos: " + lastPos);
+                    LOGD(TAG, "cursor count: " + mAdapter.getCursor().getCount());
+                    if (mAdapter != null && mAdapter.getCursor().getCount() - 1 == lastPos) {
+                        LOGD(TAG, "加载下一页");
+                        requestData(true);
+                    }
+                }
+            }
+
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                int topRowVerticalPosition =
+                        (mRecyclerView == null || mRecyclerView.getChildCount() == 0) ? 0 : mRecyclerView.getChildAt(0).getTop();
+                mSwipeRefreshLayout.setEnabled(topRowVerticalPosition >= 0);
+            }
+        });
 
         mSwipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe_layout);
         mSwipeRefreshLayout.setOnRefreshListener(this);
@@ -145,24 +165,4 @@ public abstract class BaseListFragment extends Fragment implements SwipeRefreshL
         RequestManager.getRequestQueue().add(request);
     }
 
-    @Override
-    public void onScrollStateChanged(int newlState) {
-        if (newlState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {
-            LinearLayoutManager layoutManager = (LinearLayoutManager) mRecyclerView.getLayoutManager();
-            int lastPos = layoutManager.findLastVisibleItemPosition();
-            LOGD(TAG, "lastPos: " + lastPos);
-            LOGD(TAG, "cursor count: " + mAdapter.getCursor().getCount());
-            if (mAdapter != null && mAdapter.getCursor().getCount() - 1 == lastPos) {
-                LOGD(TAG, "加载下一页");
-                requestData(true);
-            }
-        }
-    }
-
-    @Override
-    public void onScrolled(int dx, int dy) {
-        int topRowVerticalPosition =
-                (mRecyclerView == null || mRecyclerView.getChildCount() == 0) ? 0 : mRecyclerView.getChildAt(0).getTop();
-        mSwipeRefreshLayout.setEnabled(topRowVerticalPosition >= 0);
-    }
 }
